@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.innerHTML = `
       <div style="position:fixed;top:0;left:0;width:100%;
         background:#b42318;color:white;text-align:center;
-        padding:12px;box-sizing:border-box;font-weight:bold">
+        padding:12px;box-sizing:border-box;font-weight:bold;z-index:10">
         DEMO — NIEOFICJALNA APLIKACJA
       </div>
       <main style="min-height:100vh;box-sizing:border-box;
@@ -56,10 +56,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function verifyLicense() {
     showScreen(`
-      <h1>Aktywacja licencji</h1>
+      <h1>Aktywacja licencji DEMO</h1>
       <p>Wpisz klucz demonstracyjny.</p>
       <input id="licenseKey" placeholder="Klucz licencyjny"
-        autocomplete="off" style="padding:14px;width:260px">
+        autocomplete="off" style="padding:14px;width:260px;max-width:80%">
       <button id="activate" style="margin-top:15px;padding:14px">
         Aktywuj
       </button>
@@ -103,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           showPinSetup();
         }
-      } catch {
+      } catch (error) {
         message.textContent = "Błąd połączenia z serwerem.";
         button.disabled = false;
       }
@@ -132,13 +132,17 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const salt = crypto.randomUUID();
-      const hash = await derivePinHash(pin, salt);
+      try {
+        const salt = crypto.randomUUID();
+        const hash = await derivePinHash(pin, salt);
 
-      localStorage.setItem(PIN_SALT_KEY, salt);
-      localStorage.setItem(PIN_HASH_KEY, hash);
+        localStorage.setItem(PIN_SALT_KEY, salt);
+        localStorage.setItem(PIN_HASH_KEY, hash);
 
-      showPinLogin();
+        showPinLogin();
+      } catch {
+        message.textContent = "Nie udało się zapisać PIN-u.";
+      }
     };
   }
 
@@ -163,89 +167,110 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const salt = localStorage.getItem(PIN_SALT_KEY);
-      const savedHash = localStorage.getItem(PIN_HASH_KEY);
+      try {
+        const salt = localStorage.getItem(PIN_SALT_KEY);
+        const savedHash = localStorage.getItem(PIN_HASH_KEY);
 
-      const enteredHash = await derivePinHash(pin, salt);
+        if (!salt || !savedHash) {
+          message.textContent = "Brak zapisanego PIN-u.";
+          return;
+        }
 
-      if (enteredHash === savedHash) {
-        showDemo();
-      } else {
-        message.textContent = "Nieprawidłowy PIN.";
+        const enteredHash = await derivePinHash(pin, salt);
+
+        if (enteredHash === savedHash) {
+          showDemo();
+        } else {
+          message.textContent = "Nieprawidłowy PIN.";
+        }
+      } catch {
+        message.textContent = "Błąd sprawdzania PIN-u.";
       }
     };
   }
 
- 
-function showDemo() {
-  showScreen(`
-    <div style="width:100%;max-width:520px;text-align:left">
+  function showDemo() {
+    showScreen(`
+      <div style="width:100%;max-width:520px;text-align:left">
 
-      <div style="text-align:center;margin-bottom:28px">
-        <div style="font-size:13px;color:#ff7777;font-weight:bold">
-          WERSJA DEMONSTRACYJNA
+        <div style="text-align:center;margin-bottom:25px">
+          <h1 style="font-size:30px">Panel główny DEMO</h1>
+          <p style="color:#aaa">Witaj w demonstracji aplikacji</p>
         </div>
-        <h1 style="font-size:30px;margin:10px 0">Panel główny</h1>
-        <p style="color:#aaa">Witaj w demonstracji aplikacji</p>
+
+        <div style="background:#242424;padding:22px;
+          border-radius:16px;margin-bottom:20px">
+          <div style="font-size:13px;color:#ff9999">
+            PROFIL TESTOWY
+          </div>
+          <h2>Użytkownik DEMO</h2>
+          <p style="color:#aaa">Konto demonstracyjne · Dane fikcyjne</p>
+        </div>
+
+        <h2>Moduły demonstracyjne</h2>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+
+          <button data-section="Dokumenty"
+            style="padding:22px 10px;border:0;border-radius:14px;
+            background:#292929;color:white;cursor:pointer">
+            <div style="font-size:27px">📄</div>
+            <b>Dokumenty</b>
+          </button>
+
+          <button data-section="Profil"
+            style="padding:22px 10px;border:0;border-radius:14px;
+            background:#292929;color:white;cursor:pointer">
+            <div style="font-size:27px">👤</div>
+            <b>Profil</b>
+          </button>
+
+          <button data-section="Usługi"
+            style="padding:22px 10px;border:0;border-radius:14px;
+            background:#292929;color:white;cursor:pointer">
+            <div style="font-size:27px">🧩</div>
+            <b>Usługi</b>
+          </button>
+
+          <button data-section="Ustawienia"
+            style="padding:22px 10px;border:0;border-radius:14px;
+            background:#292929;color:white;cursor:pointer">
+            <div style="font-size:27px">⚙️</div>
+            <b>Ustawienia</b>
+          </button>
+
+        </div>
+
+        <p style="text-align:center;color:#999;font-size:12px;margin-top:25px">
+          Nieoficjalny projekt demonstracyjny. Wszystkie dane są fikcyjne.
+        </p>
       </div>
+    `);
 
-      <div style="background:#242424;padding:22px;border-radius:16px;margin-bottom:15px">
-        <div style="font-size:13px;color:#aaa">PROFIL DEMONSTRACYJNY</div>
-        <h2 style="margin:10px 0">Użytkownik DEMO</h2>
-        <p style="color:#aaa;margin:0">Konto testowe · Dane fikcyjne</p>
+    document.querySelectorAll("[data-section]").forEach(button => {
+      button.addEventListener("click", () => {
+        showDemoSection(button.dataset.section);
+      });
+    });
+  }
+
+  function showDemoSection(name) {
+    showScreen(`
+      <div style="width:100%;max-width:450px">
+        <h1>${name}</h1>
+        <p>Przykładowy moduł demonstracyjny.</p>
+        <p style="color:#aaa">
+          Ta sekcja nie zawiera prawdziwych dokumentów ani danych.
+        </p>
+        <button id="backHome"
+          style="padding:14px 25px;margin-top:20px;cursor:pointer">
+          Wróć do panelu głównego
+        </button>
       </div>
+    `);
 
-      <h2 style="font-size:19px">Twoje moduły</h2>
+    document.getElementById("backHome").onclick = showDemo;
+  }
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-
-        <button onclick="demoSection('Dokumenty')"
-          style="padding:22px 10px;border:0;border-radius:14px;background:#292929;color:white">
-          <div style="font-size:27px">📄</div>
-          <b>Dokumenty</b>
-          <div style="font-size:11px;color:#aaa">Przykładowe dane</div>
-        </button>
-
-        <button onclick="demoSection('Profil')"
-          style="padding:22px 10px;border:0;border-radius:14px;background:#292929;color:white">
-          <div style="font-size:27px">👤</div>
-          <b>Profil</b>
-          <div style="font-size:11px;color:#aaa">Dane testowe</div>
-        </button>
-
-        <button onclick="demoSection('Usługi')"
-          style="padding:22px 10px;border:0;border-radius:14px;background:#292929;color:white">
-          <div style="font-size:27px">🧩</div>
-          <b>Usługi</b>
-          <div style="font-size:11px;color:#aaa">Moduły demo</div>
-        </button>
-
-        <button onclick="demoSection('Ustawienia')"
-          style="padding:22px 10px;border:0;border-radius:14px;background:#292929;color:white">
-          <div style="font-size:27px">⚙️</div>
-          <b>Ustawienia</b>
-          <div style="font-size:11px;color:#aaa">Opcje aplikacji</div>
-        </button>
-
-      </div>
-
-      <div style="margin-top:25px;text-align:center;color:#999;font-size:12px">
-        Projekt nieoficjalny. Wszystkie dane są fikcyjne.
-      </div>
-    </div>
-  `);
-}
-
-function demoSection(name) {
-  showScreen(`
-    <div style="width:100%;max-width:450px">
-      <h1>${name}</h1>
-      <p>To przykładowy moduł demonstracyjny.</p>
-      <p style="color:#aaa">Nie są tu wyświetlane prawdziwe dane ani dokumenty.</p>
-      <button onclick="showDemo()"
-        style="padding:14px 25px;margin-top:20px">
-        Wróć do panelu głównego
-      </button>
-    </div>
-  `);
-}
+  verifyLicense();
+});
