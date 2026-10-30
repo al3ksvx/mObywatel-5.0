@@ -249,7 +249,3 @@ function demoSection(name) {
     </div>
   `);
 }
-
-  verifyLicense();
-});
-S
