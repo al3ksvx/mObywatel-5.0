@@ -176,13 +176,79 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  function showDemo() {
-    showScreen(`
-      <h1>Demonstracja odblokowana</h1>
-      <p>Licencja została sprawdzona.</p>
-      <p>To nieoficjalny projekt demonstracyjny.</p>
-    `);
-  }
+ 
+function showDemo() {
+  showScreen(`
+    <div style="width:100%;max-width:520px;text-align:left">
+
+      <div style="text-align:center;margin-bottom:28px">
+        <div style="font-size:13px;color:#ff7777;font-weight:bold">
+          WERSJA DEMONSTRACYJNA
+        </div>
+        <h1 style="font-size:30px;margin:10px 0">Panel główny</h1>
+        <p style="color:#aaa">Witaj w demonstracji aplikacji</p>
+      </div>
+
+      <div style="background:#242424;padding:22px;border-radius:16px;margin-bottom:15px">
+        <div style="font-size:13px;color:#aaa">PROFIL DEMONSTRACYJNY</div>
+        <h2 style="margin:10px 0">Użytkownik DEMO</h2>
+        <p style="color:#aaa;margin:0">Konto testowe · Dane fikcyjne</p>
+      </div>
+
+      <h2 style="font-size:19px">Twoje moduły</h2>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+
+        <button onclick="demoSection('Dokumenty')"
+          style="padding:22px 10px;border:0;border-radius:14px;background:#292929;color:white">
+          <div style="font-size:27px">📄</div>
+          <b>Dokumenty</b>
+          <div style="font-size:11px;color:#aaa">Przykładowe dane</div>
+        </button>
+
+        <button onclick="demoSection('Profil')"
+          style="padding:22px 10px;border:0;border-radius:14px;background:#292929;color:white">
+          <div style="font-size:27px">👤</div>
+          <b>Profil</b>
+          <div style="font-size:11px;color:#aaa">Dane testowe</div>
+        </button>
+
+        <button onclick="demoSection('Usługi')"
+          style="padding:22px 10px;border:0;border-radius:14px;background:#292929;color:white">
+          <div style="font-size:27px">🧩</div>
+          <b>Usługi</b>
+          <div style="font-size:11px;color:#aaa">Moduły demo</div>
+        </button>
+
+        <button onclick="demoSection('Ustawienia')"
+          style="padding:22px 10px;border:0;border-radius:14px;background:#292929;color:white">
+          <div style="font-size:27px">⚙️</div>
+          <b>Ustawienia</b>
+          <div style="font-size:11px;color:#aaa">Opcje aplikacji</div>
+        </button>
+
+      </div>
+
+      <div style="margin-top:25px;text-align:center;color:#999;font-size:12px">
+        Projekt nieoficjalny. Wszystkie dane są fikcyjne.
+      </div>
+    </div>
+  `);
+}
+
+function demoSection(name) {
+  showScreen(`
+    <div style="width:100%;max-width:450px">
+      <h1>${name}</h1>
+      <p>To przykładowy moduł demonstracyjny.</p>
+      <p style="color:#aaa">Nie są tu wyświetlane prawdziwe dane ani dokumenty.</p>
+      <button onclick="showDemo()"
+        style="padding:14px 25px;margin-top:20px">
+        Wróć do panelu głównego
+      </button>
+    </div>
+  `);
+}
 
   verifyLicense();
 });
