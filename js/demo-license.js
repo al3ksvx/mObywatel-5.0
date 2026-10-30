@@ -5,24 +5,22 @@ const SUPABASE_FUNCTION_URL =
 const SUPABASE_ANON_KEY =
   "sb_publishable_7a22MkwS4JphaaZVoMnxYQ_bMe4gy7P";
 
+const PIN_HASH_KEY = "demo_pin_hash";
+const PIN_SALT_KEY = "demo_pin_salt";
+
 document.addEventListener("DOMContentLoaded", () => {
-  const deviceIdKey = "demo_device_id";
-  let deviceId = localStorage.getItem(deviceIdKey);
+  let deviceId = localStorage.getItem("demo_device_id");
 
   if (!deviceId) {
     deviceId = crypto.randomUUID();
-    localStorage.setItem(deviceIdKey, deviceId);
+    localStorage.setItem("demo_device_id", deviceId);
   }
-
-  let pin = null;
-  let licenseActivated = false;
 
   function showScreen(content) {
     document.body.innerHTML = `
       <div style="position:fixed;top:0;left:0;width:100%;
         background:#b42318;color:white;text-align:center;
-        padding:12px;box-sizing:border-box;font-weight:bold;
-        z-index:99999">
+        padding:12px;box-sizing:border-box;font-weight:bold">
         DEMO — NIEOFICJALNA APLIKACJA
       </div>
       <main style="min-height:100vh;box-sizing:border-box;
@@ -33,27 +31,48 @@ document.addEventListener("DOMContentLoaded", () => {
       </main>`;
   }
 
-  function showLicense() {
+  function derivePinHash(pin, salt) {
+    const encoder = new TextEncoder();
+
+    return crypto.subtle.importKey(
+      "raw",
+      encoder.encode(pin),
+      "PBKDF2",
+      false,
+      ["deriveBits"]
+    ).then(key =>
+      crypto.subtle.deriveBits({
+        name: "PBKDF2",
+        salt: encoder.encode(salt),
+        iterations: 150000,
+        hash: "SHA-256"
+      }, key, 256)
+    ).then(bits =>
+      Array.from(new Uint8Array(bits))
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("")
+    );
+  }
+
+  async function verifyLicense() {
     showScreen(`
       <h1>Aktywacja licencji</h1>
       <p>Wpisz klucz demonstracyjny.</p>
       <input id="licenseKey" placeholder="Klucz licencyjny"
-        autocomplete="off"
-        style="padding:14px;width:100%;max-width:300px;
-        box-sizing:border-box;border-radius:8px;border:0">
-      <button id="activate" style="margin-top:15px;padding:14px 25px">
+        autocomplete="off" style="padding:14px;width:260px">
+      <button id="activate" style="margin-top:15px;padding:14px">
         Aktywuj
       </button>
-      <p id="message" role="status"></p>
+      <p id="message"></p>
     `);
 
     document.getElementById("activate").onclick = async () => {
       const key = document.getElementById("licenseKey").value.trim();
-      const message = document.getElementById("message");
       const button = document.getElementById("activate");
+      const message = document.getElementById("message");
 
       if (!key) {
-        message.textContent = "Wpisz klucz licencyjny.";
+        message.textContent = "Wpisz klucz.";
         return;
       }
 
@@ -74,13 +93,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const result = await response.json();
 
         if (!response.ok || !result.valid) {
-          message.textContent = "Licencja jest nieprawidłowa lub przypisana.";
+          message.textContent = "Licencja nieprawidłowa lub przypisana.";
           button.disabled = false;
           return;
         }
 
-        licenseActivated = true;
-        showPinSetup();
+        if (localStorage.getItem(PIN_HASH_KEY)) {
+          showPinLogin();
+        } else {
+          showPinSetup();
+        }
       } catch {
         message.textContent = "Błąd połączenia z serwerem.";
         button.disabled = false;
@@ -90,27 +112,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function showPinSetup() {
     showScreen(`
-      <h1>Utwórz lokalny PIN</h1>
-      <p>Ustal własny PIN do tej demonstracji.</p>
+      <h1>Utwórz PIN</h1>
+      <p>Ustal własny PIN od 4 do 6 cyfr.</p>
       <input id="newPin" type="password" inputmode="numeric"
         maxlength="6" placeholder="Nowy PIN"
         style="padding:14px;width:220px">
       <button id="savePin" style="margin-top:15px;padding:14px">
         Zapisz PIN
       </button>
-      <p id="pinMessage"></p>
+      <p id="message"></p>
     `);
 
-    document.getElementById("savePin").onclick = () => {
-      const value = document.getElementById("newPin").value;
-      const message = document.getElementById("pinMessage");
+    document.getElementById("savePin").onclick = async () => {
+      const pin = document.getElementById("newPin").value;
+      const message = document.getElementById("message");
 
-      if (!/^[0-9]{4,6}$/.test(value)) {
+      if (!/^[0-9]{4,6}$/.test(pin)) {
         message.textContent = "PIN musi mieć od 4 do 6 cyfr.";
         return;
       }
 
-      pin = value;
+      const salt = crypto.randomUUID();
+      const hash = await derivePinHash(pin, salt);
+
+      localStorage.setItem(PIN_SALT_KEY, salt);
+      localStorage.setItem(PIN_HASH_KEY, hash);
+
       showPinLogin();
     };
   }
@@ -118,24 +145,33 @@ document.addEventListener("DOMContentLoaded", () => {
   function showPinLogin() {
     showScreen(`
       <h1>Wpisz PIN</h1>
-      <p>PIN jest sprawdzany lokalnie w tej karcie.</p>
       <input id="pinInput" type="password" inputmode="numeric"
         maxlength="6" placeholder="PIN"
         style="padding:14px;width:220px">
       <button id="checkPin" style="margin-top:15px;padding:14px">
         Odblokuj
       </button>
-      <p id="pinMessage"></p>
+      <p id="message"></p>
     `);
 
-    document.getElementById("checkPin").onclick = () => {
-      const value = document.getElementById("pinInput").value;
+    document.getElementById("checkPin").onclick = async () => {
+      const pin = document.getElementById("pinInput").value;
+      const message = document.getElementById("message");
 
-      if (value === pin) {
+      if (!/^[0-9]{4,6}$/.test(pin)) {
+        message.textContent = "Wpisz poprawny PIN.";
+        return;
+      }
+
+      const salt = localStorage.getItem(PIN_SALT_KEY);
+      const savedHash = localStorage.getItem(PIN_HASH_KEY);
+
+      const enteredHash = await derivePinHash(pin, salt);
+
+      if (enteredHash === savedHash) {
         showDemo();
       } else {
-        document.getElementById("pinMessage").textContent =
-          "Nieprawidłowy PIN.";
+        message.textContent = "Nieprawidłowy PIN.";
       }
     };
   }
@@ -148,5 +184,6 @@ document.addEventListener("DOMContentLoaded", () => {
     `);
   }
 
-  showLicense();
+  verifyLicense();
 });
+S
