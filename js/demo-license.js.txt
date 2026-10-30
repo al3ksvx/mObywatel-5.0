@@ -1,0 +1,97 @@
+
+const SUPABASE_FUNCTION_URL =
+  "https://acuwzmknybtkxnbhhfjb.supabase.co/functions/v1/license-manager";
+
+// Wstaw tutaj publiczny klucz anon/publishable z Supabase.
+// Nigdy nie wstawiaj service_role.
+const SUPABASE_ANON_KEY = "WKLEJ_TUTAJ_KLUCZ_PUBLICZNY";
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.body.innerHTML = `
+    <main style="
+      min-height:100vh;
+      box-sizing:border-box;
+      padding:30px 20px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      background:#121212;
+      color:white;
+      font-family:Arial,sans-serif;
+      text-align:center;
+    ">
+      <h1>DEMO — aplikacja demonstracyjna</h1>
+      <p>Nieoficjalny projekt. Nie jest usługą administracji publicznej.</p>
+      <h2>Aktywacja licencji</h2>
+      <input id="licenseKey" placeholder="Wpisz klucz licencyjny"
+        autocomplete="off"
+        style="padding:14px;width:100%;max-width:300px;
+        box-sizing:border-box;border-radius:8px;border:0;">
+      <button id="activateLicense"
+        style="margin-top:15px;padding:14px 25px;
+        border:0;border-radius:8px;background:#2563eb;
+        color:white;font-size:16px;">
+        Aktywuj licencję
+      </button>
+      <p id="licenseMessage" role="status"></p>
+    </main>
+  `;
+
+  const input = document.getElementById("licenseKey");
+  const button = document.getElementById("activateLicense");
+  const message = document.getElementById("licenseMessage");
+
+  let deviceId = localStorage.getItem("demo_device_id");
+
+  if (!deviceId) {
+    deviceId = crypto.randomUUID();
+    localStorage.setItem("demo_device_id", deviceId);
+  }
+
+  button.addEventListener("click", async () => {
+    const key = input.value.trim();
+
+    if (!key) {
+      message.textContent = "Wpisz klucz licencyjny.";
+      return;
+    }
+
+    if (SUPABASE_ANON_KEY === "sb_publishable_7a22MkwS4JphaaZVoMnxYQ_bMe4gy7P") {
+      message.textContent = "Najpierw skonfiguruj klucz publiczny Supabase.";
+      return;
+    }
+
+    button.disabled = true;
+    message.textContent = "Sprawdzanie licencji...";
+
+    try {
+      const response = await fetch(SUPABASE_FUNCTION_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ key, deviceId })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.valid) {
+        message.textContent =
+          result.error === "License already assigned"
+            ? "Ten klucz jest przypisany do innego urządzenia."
+            : "Nieprawidłowy klucz licencyjny.";
+        return;
+      }
+
+      message.textContent = "Licencja aktywowana. Możesz korzystać z demonstracji.";
+      input.disabled = true;
+    } catch {
+      message.textContent = "Nie udało się połączyć z serwerem.";
+    } finally {
+      button.disabled = false;
+    }
+  });
+});
