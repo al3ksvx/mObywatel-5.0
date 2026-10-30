@@ -315,121 +315,16 @@ a {
   text-align: center;
 }
 
-/* Mobilny układ wersji DEMO */
-html,
-body {
-    width: 100%;
-    min-height: 100%;
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden;
-}
+@media (max-width: 600px) {
+  .login {
+    padding-top: clamp(12px, 2.5vh, 28px);
+    padding-bottom: clamp(10px, 2vh, 20px);
+    gap: clamp(10px, 2vh, 24px);
+  }
 
-* {
-    box-sizing: border-box;
-}
-
-.login {
-    width: 100%;
-    min-height: 100vh;
-    min-height: 100dvh;
-    padding:
-        env(safe-area-inset-top, 0px)
-        20px
-        env(safe-area-inset-bottom, 0px);
-    display: flex;
-    flex-direction: column;
-}
-
-.login__header {
-    width: 100%;
-    margin: 0 auto;
-    padding-top: 12px;
-}
-
-.login__logo-image {
-    max-width: 170px;
-    height: auto;
-}
-
-.login__intro {
-    margin-top: 24px;
-}
-
-.login__title {
-    font-size: clamp(23px, 6vw, 30px);
-    line-height: 1.2;
-}
-
-.login__subtitle {
-    font-size: 14px;
-    line-height: 1.5;
-}
-
-.login__main {
-    width: 100%;
-    flex: 1;
-    padding: 20px 0;
-}
-
-.login__form {
-    width: 100%;
-}
-
-.login__password-input {
-    width: 100%;
-    min-width: 0;
-    min-height: 48px;
-}
-
-#bottomButtonsContainer {
-    width: 100%;
-    margin-top: auto;
-    padding-bottom: 8px;
-}
-
-#bottomButtonsContainer button {
-    width: 100%;
-    min-height: 48px;
-}
-
-.login__footer {
-    width: 100%;
-    padding: 12px 0 4px;
-}
-
-.login__footerImages {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
+  .login__logo-group {
     gap: 10px;
-}
-
-@media (max-height: 700px) {
-    .login__header {
-        padding-top: 4px;
-    }
-
-    .login__intro {
-        margin-top: 14px;
-    }
-
-    .login__main {
-        padding: 12px 0;
-    }
-
-    .login__footer {
-        padding-top: 6px;
-    }
-}
-
-@media (min-width: 600px) {
-    .login {
-        max-width: 480px;
-        margin: 0 auto;
-    }
-}
+  }
 
   .login__form {
     padding: clamp(10px, 1.8vh, 16px) clamp(14px, 2.5vw, 20px);
